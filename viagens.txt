@@ -1,0 +1,6 @@
+Data: 01/06/2025
+Rota: 1
+Horário: 16:20
+Valor: R$50,00
+Data de Pagamento: 15
+------------------------------
