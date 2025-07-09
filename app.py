@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 from tkinter import *
 from tkinter import ttk, messagebox, filedialog
+from tkcalendar import DateEntry  # Importando o DateEntry
 import pandas as pd
 from fpdf import FPDF
 import csv
@@ -76,6 +77,14 @@ class SistemaMotoristas:
                     }
                     escritor.writerow(motorista)
     
+    def calcular_valor_total(self):
+        valor_total = 0.0
+        for rotas in self.rotas_por_motorista.values():
+            for rota in rotas:
+                valor_str = rota['valor'].replace('R$', '').replace(',', '.').strip()
+                valor_total += float(valor_str)
+        return valor_total
+
     def criar_interface(self):
         # Frame principal
         main_frame = ttk.Frame(self.root, padding="10")
@@ -129,8 +138,8 @@ class SistemaMotoristas:
         
         # Data
         ttk.Label(rota_frame, text="Data:").grid(row=1, column=0, sticky=W)
-        self.data_var = StringVar(value=datetime.now().strftime("%d/%m/%Y"))
-        ttk.Entry(rota_frame, textvariable=self.data_var, state='readonly').grid(row=1, column=1, sticky=W)
+        self.data_entry = DateEntry(rota_frame, width=12, background='darkblue', foreground='white', borderwidth=2)
+        self.data_entry.grid(row=1, column=1, sticky=W)
         
         # Rota
         ttk.Label(rota_frame, text="Rota:").grid(row=2, column=0, sticky=W)
@@ -206,6 +215,10 @@ class SistemaMotoristas:
         ttk.Button(exportacao_frame, text="Filtrar por Mês", command=self.filtrar_por_mes).grid(row=0, column=2, padx=5)
         ttk.Button(exportacao_frame, text="Remover Selecionado", command=self.remover_selecionado).grid(row=0, column=3, padx=5)
         
+        # Exibir o valor total das corridas
+        valor_total_label = ttk.Label(main_frame, text=f"Valor Total: R${self.calcular_valor_total():.2f}", font=('Arial', 12, 'bold'))
+        valor_total_label.grid(row=4, column=0, sticky=W, padx=5, pady=5)
+        
         # Atualizar visualização
         self.atualizar_combobox_motoristas()
         self.atualizar_visualizacao()
@@ -256,7 +269,7 @@ class SistemaMotoristas:
     
     def cadastrar_rota(self):
         nome = self.motorista_combobox.get()
-        data = self.data_var.get()
+        data = self.data_entry.get_date().strftime("%d/%m/%Y")  # Usando o DateEntry para obter a data
         rota = self.rota_entry.get().strip()
         
         # Obter horário
@@ -306,7 +319,7 @@ class SistemaMotoristas:
         self.pagamento_var.set('')
         
         # Atualizar data
-        self.data_var.set(datetime.now().strftime("%d/%m/%Y"))
+        self.data_entry.set_date(datetime.now())
         
         # Feedback
         messagebox.showinfo("Sucesso", "Rota cadastrada com sucesso!")
@@ -427,6 +440,10 @@ class SistemaMotoristas:
                     pdf.cell(col_widths[7], 10, rota['pagamento'], 1, 0, 'C')
                     pdf.ln()
         
+        # Adicionar valor total das corridas
+        pdf.cell(0, 10, f"Valor Total das Corridas: R${self.calcular_valor_total():.2f}", 0, 1, 'C')
+        pdf.ln(10)
+        
         # Salvar arquivo
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
@@ -461,6 +478,9 @@ class SistemaMotoristas:
                     })
         
         df = pd.DataFrame(dados)
+        
+        # Adicionar valor total das corridas
+        df['Valor Total'] = self.calcular_valor_total()
         
         # Salvar arquivo
         file_path = filedialog.asksaveasfilename(
@@ -638,6 +658,10 @@ class SistemaMotoristas:
             pdf.cell(col_widths[6], 10, dado['Valor'], 1, 0, 'R')
             pdf.cell(col_widths[7], 10, dado['Pagamento'], 1, 0, 'C')
             pdf.ln()
+        
+        # Adicionar valor total das corridas
+        pdf.cell(0, 10, f"Valor Total das Corridas: R${self.calcular_valor_total():.2f}", 0, 1, 'C')
+        pdf.ln(10)
         
         # Salvar arquivo
         file_path = filedialog.asksaveasfilename(
